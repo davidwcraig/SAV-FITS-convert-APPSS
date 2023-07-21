@@ -10,7 +10,7 @@ def sav_dict(sav_file):
     """Converts IDL sav file from lbwsrc etc. to return python dict"""
     from scipy.io import readsav
     
-    idl_data = readsav(sav_file, verbose=True)  # this will be a numpy recarray, somewhat nested
+    idl_data = readsav(sav_file, verbose=False)  # this will be a numpy recarray, somewhat nested
     di = idl_data.lbwsrc # shorten name (lbwsrc is only top-level attribute)
     dd = {}   # data dict
     for ob in di.dtype.names:

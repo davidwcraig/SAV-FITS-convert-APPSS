@@ -8,9 +8,23 @@ import sys
 from os.path import splitext # for filename extension splitting
 import numpy as np
 import matplotlib.pyplot as plt
-from sav_manip import sav_dict #small module for .sav files -dwc
+# from sav_manip import sav_dict #small module for .sav files -dwc
 from astropy.io import fits
 import datetime
+
+
+def sav_dict(sav_file):
+    """Converts IDL sav file from lbwsrc etc. to return python dict"""
+    from scipy.io import readsav
+    
+    idl_data = readsav(sav_file, verbose=False)  # this will be a numpy recarray, somewhat nested
+    di = idl_data.lbwsrc # shorten name (lbwsrc is only top-level attribute)
+    dd = {}   # data dict
+    for ob in di.dtype.names:
+        dd[ob] = getattr(di,ob)[0] # the [0] index gets the value for most of the pieces of the recarray.
+                                   # Some are a bit more nested and will need recursing into.
+    return dd
+
 
 # The `sav_manip.sav_dict` function opens the LBW data structure from IDL and puts
 # the elements in a python dictionary. Most of its elements are reduced to scalars
@@ -22,11 +36,11 @@ def make_hdu_list(sav_file_name):
     """make a fits HDU list structure for sav_file_name"""
     # get some APPSS data:
     appssd = sav_dict(sav_file_name)
-    #diagnostic:
-    print("Items found in .sav structure:")
-    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-    for thing in appssd.items():
-        print(thing)
+#     #diagnostic:
+#     print("Items found in .sav structure:")
+#     print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+#     for thing in appssd.items():
+#         print(thing)
 
     ## Assemble parts of FITS file
     # Make the astropy data structure for a new fits file.
