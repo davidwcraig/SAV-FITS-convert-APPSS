@@ -3,7 +3,7 @@
 
  This originally began as a notebook using `scipy.io.readsav` and
  `astropy.io.fits` to convert Arecibo HI spectrum data from IDL `.sav` files 
- to FITS files for use by the [Undergrad ALFAFLA
+ to FITS files for use by the [Undergrad ALFALFA
  team](http://egg.astro.cornell.edu/alfalfa/ugradteam/ugradteam.php)
 
  Documentation of readsav:
