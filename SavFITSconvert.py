@@ -5,7 +5,7 @@
 #
 # WORKING NON-NOTEBOOK VERSION
 
-import sys.argv
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from sav_manip import sav_dict #small module for .sav files -dwc
@@ -93,8 +93,14 @@ def make_hdu_list(sav_file_name):
 # hdu_lst.writeto('APPSS_test_tab.fits', overwrite = True)
 
 def main():
-    infile = argv[1]
+    infile = sys.argv[1]
+    namesplit = infile.split('.')
+    basename = namesplit[0]
+    outfile = basename+'fits'
     hdul = make_hdu_list(infile)
-    print("Writing test file!")
-    hdul.writeto('APPSS_test_tab.fits', overwrite = True)
+    print("Writing FITS file: ", outfile)
+    hdul.writeto(outfile, overwrite = True)
 
+## RUN IT
+
+main()
