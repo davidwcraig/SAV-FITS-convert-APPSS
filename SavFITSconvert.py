@@ -6,6 +6,7 @@
 # WORKING NON-NOTEBOOK VERSION
 
 import sys
+from os.path import splitext # for filename extension splitting
 import numpy as np
 import matplotlib.pyplot as plt
 from sav_manip import sav_dict #small module for .sav files -dwc
@@ -21,7 +22,7 @@ import datetime
 def make_hdu_list(sav_file_name): 
     """make a fits HDU list structure for sav_file_name"""
     # get some APPSS data:
-    appssd = sav_dict('S000018.4+273720.sav')
+    appssd = sav_dict(sav_file_name)
     #diagnostic:
     print("Items found in .sav structure:")
     print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
@@ -34,7 +35,7 @@ def make_hdu_list(sav_file_name):
     t_str = tstamp.isoformat() + ' UTC'
     #This makes the first (primary) HDU, which is not very complicated.
     hdr = fits.Header()
-    hdr['COMMENT'] = 'TEST .FITS file from idl .sav made using SavFITSconvert.py'
+    hdr['COMMENT'] = 'FITS file from idl .sav made using SavFITSconvert.py'
     hdr['HISTORY'] = 'David Craig for APPSS'
     hdr['HISTORY'] = 'Generated ' + t_str
     primary_hdu = fits.PrimaryHDU(header=hdr)
@@ -84,7 +85,7 @@ def make_hdu_list(sav_file_name):
          hdr.set('COMMENT',appssd['COMMENTS'].TEXT[0][line].decode('ascii'))
 
     #comments for test file
-    hdr.set('COMMENT', 'WARNING! Converted by early version of SavFITSconvert.py !')
+    hdr.set('COMMENT', 'WARNING! Converted by early version of SavFITSconvert.py')
 
     #make the overall .FITS structure and RETURN IT:
     return fits.HDUList([primary_hdu, hdu])
@@ -94,9 +95,8 @@ def make_hdu_list(sav_file_name):
 
 def main():
     infile = sys.argv[1]
-    namesplit = infile.split('.')
-    basename = namesplit[0]
-    outfile = basename+'fits'
+    nameparts = splitext(infile)
+    outfile = nameparts[0]+'.fits'
     hdul = make_hdu_list(infile)
     print("Writing FITS file: ", outfile)
     hdul.writeto(outfile, overwrite = True)
