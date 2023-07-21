@@ -1,9 +1,8 @@
-# SavFITSconvert0.py
-# D. Craig 2023-07-20
-# This is a copy of the chain of python code in 
-# Storage/davidwcraigx/persistent/appss-alfalfa-fits/alfalfa-apps-fits-0.ipynb
-#
+# SavFITSconvert.py
+# D. Craig 2023-07-21
 # WORKING NON-NOTEBOOK VERSION
+# Usage python SavFITSconvert <infile>
+#  - will strip off .sav from file name and write .fits file with same base name
 
 import sys
 from os.path import splitext # for filename extension splitting
