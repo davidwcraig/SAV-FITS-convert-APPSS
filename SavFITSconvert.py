@@ -104,9 +104,8 @@ def make_hdu_list(sav_file_name):
     return fits.HDUList([primary_hdu, hdu])
     # END OF make_hdu_list
 
-# hdu_lst.writeto('APPSS_test_tab.fits', overwrite = True)
-
-def main():
+#script execution
+if __name__ == "__main__"
     infile = sys.argv[1]
     nameparts = splitext(infile)
     outfile = nameparts[0]+'.fits'
@@ -114,6 +113,3 @@ def main():
     print("Writing FITS file: ", outfile)
     hdul.writeto(outfile, overwrite = True)
 
-## RUN IT
-
-main()
