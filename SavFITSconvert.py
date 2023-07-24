@@ -111,7 +111,7 @@ def make_hdu_list(sav_file_name, verbose=glVerboseFlag):
 #script execution
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-v", "--verbose", help="increase output verbosity",
+    parser.add_argument("-v", "--verbose", help="show .SAV input struct, FITS output headers.",
                     action="store_true")
     parser.add_argument("input_file", type=str,
                     help=".SAV file to be converted to FITS")
@@ -124,9 +124,9 @@ if __name__ == "__main__":
         print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
         print("OUTPUT:------------MAIN FITS HEADER----------------------")
         print(repr(hdul[0].header))
-            
         print("OUTPUT:------------BINTABLE HEADER-----------------------")
         print(repr(hdul[1].header))
+        print("---------------------------------------------------------")
         print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
         print("Writing FITS file: ", outfile)
     hdul.writeto(outfile, overwrite = True)
