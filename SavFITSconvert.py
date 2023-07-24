@@ -120,5 +120,13 @@ if __name__ == "__main__":
     nameparts = splitext(infile)
     outfile = nameparts[0]+'.fits'
     hdul = make_hdu_list(infile, verbose=args.verbose)
-    print("Writing FITS file: ", outfile)
+    if args.verbose:
+        print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        print("OUTPUT:------------MAIN FITS HEADER----------------------")
+        print(repr(hdul[0].header))
+            
+        print("OUTPUT:------------BINTABLE HEADER-----------------------")
+        print(repr(hdul[1].header))
+        print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
+        print("Writing FITS file: ", outfile)
     hdul.writeto(outfile, overwrite = True)
