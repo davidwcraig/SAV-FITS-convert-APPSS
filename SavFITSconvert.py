@@ -29,7 +29,7 @@ def sav_dict(sav_file):
 # The `sav_manip.sav_dict` function opens the LBW data structure from IDL and puts
 # the elements in a python dictionary. Most of its elements are reduced to scalars
 # or simple arrays keyed by their keywords. A few are more nested structures that
-# need a little more manipulation to be placed in the FITS HDUs.  It unpacks the
+# need a little more manipulation to be placed in the FITS HDUs.  This unpacks the
 # `lbwsrc` variable in the idl structure.
 # initial filenam for testing: 'S000018.4+273720.sav'
 def make_hdu_list(sav_file_name): 
