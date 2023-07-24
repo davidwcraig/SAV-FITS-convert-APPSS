@@ -4,13 +4,15 @@
 # Usage python SavFITSconvert <infile>
 #  - will strip off .sav from file name and write .fits file with same base name
 
-import sys
+import sys, argparse
 from os.path import splitext # for filename extension splitting
 import numpy as np
 import matplotlib.pyplot as plt
 # from sav_manip import sav_dict #small module for .sav files -dwc
 from astropy.io import fits
 import datetime
+
+glVerboseFlag = False # global verbosity flag for script
 
 
 def sav_dict(sav_file):
@@ -32,16 +34,17 @@ def sav_dict(sav_file):
 # need a little more manipulation to be placed in the FITS HDUs.  This unpacks the
 # `lbwsrc` variable in the idl structure.
 # initial filenam for testing: 'S000018.4+273720.sav'
-def make_hdu_list(sav_file_name): 
+def make_hdu_list(sav_file_name, verbose=glVerboseFlag): 
     """make a fits HDU list structure for sav_file_name"""
     # get some APPSS data:
     appssd = sav_dict(sav_file_name)
-#     #diagnostic:
-#     print("Items found in .sav structure:")
-#     print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-#     for thing in appssd.items():
-#         print(thing)
-
+     #diagnostic:
+    if verbose:
+        print("Items found in .sav structure:")
+        print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        for thing in appssd.items():
+             print(thing)
+        print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
     ## Assemble parts of FITS file
     # Make the astropy data structure for a new fits file.
     tstamp = datetime.datetime.utcnow()
@@ -72,6 +75,7 @@ def make_hdu_list(sav_file_name):
     hdr.set( 'NAME'    , ' ' ,'Common name' )   #TODO NEEDS IMPORT if found 
     #appss idl text data is still in bytes, does it work? 
     #NOPE! So it must be decoded. .FITS standard accepts ASCII only:                      
+    #NOTE: .sav files seem to have AGC tag but it is often zero (0)
     hdr.set('HISRC ', appssd['LBWSRCNAME'].decode('ascii'), 'HI source name')    
     hdr.set('ORIGIN', 'SavFITSconvert.py conversion D Craig', 'File creation location') 
     hdr.set('RA', appssd['RA'],'Right ascension in degrees')
@@ -105,11 +109,16 @@ def make_hdu_list(sav_file_name):
     # END OF make_hdu_list
 
 #script execution
-if __name__ == "__main__"
-    infile = sys.argv[1]
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-v", "--verbose", help="increase output verbosity",
+                    action="store_true")
+    parser.add_argument("input_file", type=str,
+                    help=".SAV file to be converted to FITS")
+    args = parser.parse_args()
+    infile = args.input_file
     nameparts = splitext(infile)
     outfile = nameparts[0]+'.fits'
-    hdul = make_hdu_list(infile)
+    hdul = make_hdu_list(infile, verbose=args.verbose)
     print("Writing FITS file: ", outfile)
     hdul.writeto(outfile, overwrite = True)
-
