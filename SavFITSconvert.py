@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from astropy.io import fits
 import datetime
 from scipy.io import readsav
+from astropy.table import Table
 
 glVerboseFlag = False # global verbosity flag for script
 
@@ -52,7 +53,7 @@ def examine_sav(sav_file):
 # need a little more manipulation to be placed in the FITS HDUs.  This unpacks the
 # `lbwsrc` variable in the idl structure.
 # initial filenam for testing: 'S000018.4+273720.sav'
-def make_hdu_list(sav_file_name, verbose=glVerboseFlag): 
+def make_hdu_list(sav_file_name, verbose=glVerboseFlag, matchfile=None, backend='UNSPECIFIED'): 
     """make a fits HDU list structure for sav_file_name"""
     # get some APPSS data:
     appssd = sav_dict(sav_file_name)
@@ -63,6 +64,20 @@ def make_hdu_list(sav_file_name, verbose=glVerboseFlag):
         for thing in appssd.items():
              print(thing)
         print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
+    #get the name, if matchfile exists, try to get AGC
+    srcnm = appssd['LBWSRCNAME'].decode('ascii')
+    if matchfile:
+        t = Table.read(matchfile)
+        td = dict()
+        for i in t.as_array():
+            td.update([i])
+        try:
+            agc_num = td[srcnm]
+            print('AGC for ' , srcnm, ' found in ', matchfile, 'as: ', agc_num)
+        except KeyError:
+            print('ERROR: AGC not found for: ',srcnm, '>>> using -999')
+            agc_num = -999
+
     ## Assemble parts of FITS file
     # Make the astropy data structure for a new fits file.
     tstamp = datetime.datetime.utcnow()
@@ -87,10 +102,10 @@ def make_hdu_list(sav_file_name, verbose=glVerboseFlag):
     hdr.set('OBSERVAT', 'Arecibo Observatory','Designation of Observatory')
     hdr.set('TELESCOP','Arecibo Radio Telescope','Designation of Telescope')
     hdr.set('INSTRUME','L-Band Wide','Instrument in use')
-    hdr.set('BACKEND', 'WAPPS','Backend (Interim correllator or WAPPS)')
+    hdr.set('BACKEND', backend,'Backend (Interim correllator or WAPPS)')
     hdr.set('BEAM','3.3', 'Beam size [arcminutes]')  
     hdr.set('NANVALUE',-999.000,'Value of missing/null data')                     
-    hdr.set('OBJECT' , 'UNASSIGNED  ', 'Name of observed object')  #TODO NEEDS IMPORT if found               
+    hdr.set('OBJECT' , 'AGC {:6d}'.format(agc_num), 'Name of observed object')  #TODO not sure all cases caught yet.             
     hdr.set( 'NAME'    , ' ' ,'Common name' )   #TODO NEEDS IMPORT if found 
     #appss idl text data is still in bytes, does it work? 
     #NOPE! So it must be decoded. .FITS standard accepts ASCII only:                      
@@ -105,19 +120,6 @@ def make_hdu_list(sav_file_name, verbose=glVerboseFlag):
     hdr.set('V21SYS', appssd['VSYS'], 'systemic velocity [km/s]')
     hdr.set('COMMENT','Undergraduate ALFALFA Team (UAT)')
     hdr.set('COMMENT','Last updated: ' + t_str + ' (SavFITSconvert)') # insert a timestamp here too for consistency
-   # all the tags commented below here do not appear in the minimally processed APPSS archive files 
-#     hdr.set('WINDOW', appssd['WINDOW'].decode('ascii'), 'h for Hamming(?)')
-#     hdr.set('FITTYPE', appssd['FITTYPE'].decode('ascii'), 'P for polynomial')
-#     hdr.set('RMS', appssd['RMS'], 'RMS of spectrum (noise)')
-#     hdr.set('W50', appssd['W50'], 'estimated velocity width at 50%')
-#     hdr.set('W50ERR', appssd['W50ERR'], 'error in W50')
-#     hdr.set('W20', appssd['W20'], 'estimated velocity width at 20%')
-#     hdr.set('W20ERR', appssd['W20ERR'], 'error in W20')
-#     hdr.set('VSYSERR',appssd['VSYSERR'], 'error in Vsys [km/s]')
-#     hdr.set('FLUX', appssd['FLUX'], 'integrated flux [Jy km/s]')
-#     hdr.set('FLUXERR', appssd['FLUXERR'], 'error in integrated flux')
-#     hdr.set('SN',appssd['SN'],'estimated signal-to-noise ratio')
-
     # now include all observer(?) comments from the sav structure that are in the dict
     # this will insert a new comment for each of those lines.
     for line in range(appssd['COMMENTS'].COUNT[0]):
@@ -127,21 +129,36 @@ def make_hdu_list(sav_file_name, verbose=glVerboseFlag):
     hdr.set('COMMENT', 'WARNING! Converted by early version of SavFITSconvert.py')
 
     #make the overall .FITS structure and RETURN IT:
-    return fits.HDUList([primary_hdu, hdu])
+    if backend == 'UNSPECIFIED': 
+        print('Warning: backend UNSPECIFIED') 
+    return agc_num, fits.HDUList([primary_hdu, hdu])
     # END OF make_hdu_list
 
 #script execution
 if __name__ == "__main__":
+    backend='UNSPECIFIED' # in case none is chosen.
     parser = argparse.ArgumentParser()
-    parser.add_argument("-v", "--verbose", help="show .SAV input struct, FITS output headers.",
+    parser.add_argument("-v", "--verbose", help="Show .SAV input struct, FITS output headers.",
                     action="store_true")
     parser.add_argument("input_file", type=str,
                     help=".SAV file to be converted to FITS")
+    parser.add_argument("-b", "--backend", type=str, choices = ["wapps", "interim"], 
+                        help="Specify backend: wapps or interim.")
+    parser.add_argument("-m", "--matchfile", type=str, 
+                        help="Match file for LBWsrc and AGCnr <--should have these headings, readable by astropy.table.Table.")
     args = parser.parse_args()
+    if args.backend == "wapps":
+        backend = "WAPPS"
+    elif args.backend == "interim":
+        backend = "Interim correlator"
+    else:
+        pass #should be UNSPECIFIED by default
     infile = args.input_file
-    nameparts = splitext(infile)
-    outfile = nameparts[0]+'.fits'
-    hdul = make_hdu_list(infile, verbose=args.verbose)
+#     nameparts = splitext(infile)
+#     outfile = nameparts[0]+'.fits'
+    
+    agcnr, hdul = make_hdu_list(infile, verbose=args.verbose, backend=backend, matchfile=args.matchfile)
+    outfile = "A{:06d}_converted.fits".format(agcnr)
     if args.verbose:
         print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
         print("OUTPUT:------------MAIN FITS HEADER----------------------")
@@ -150,5 +167,6 @@ if __name__ == "__main__":
         print(repr(hdul[1].header))
         print("---------------------------------------------------------")
         print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
-        print("Writing FITS file: ", outfile)
+        
+    print("Writing FITS file: ", outfile)
     hdul.writeto(outfile, overwrite = True)
