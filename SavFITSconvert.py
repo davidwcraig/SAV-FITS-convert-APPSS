@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 # from sav_manip import sav_dict #small module for .sav files -dwc
 from astropy.io import fits
 import datetime
+from scipy.io import readsav
 
 glVerboseFlag = False # global verbosity flag for script
 
@@ -26,8 +27,6 @@ def examine_fits(fitsfile):
     
 def sav_dict(sav_file):
     """Converts IDL sav file from lbwsrc etc. to return python dict"""
-    from scipy.io import readsav
-    
     idl_data = readsav(sav_file, verbose=False)  # this will be a numpy recarray, somewhat nested
     di = idl_data.lbwsrc # shorten name (lbwsrc is only top-level attribute)
     dd = {}   # data dict
@@ -36,6 +35,16 @@ def sav_dict(sav_file):
                                    # Some are a bit more nested and will need recursing into.
     return dd
 
+def examine_sav(sav_file):
+    """Show the contents of the dict produced by readsav by opening file"""
+    idl_data = readsav(sav_file, verbose=True)  # numpy recarray
+    di = idl_data.lbwsrc
+    dd = {}
+    for ob in di.dtype.names:
+        dd[ob] = getattr(di, ob)[0]
+    print(repr(dd))
+    for thing in dd.items():
+        print(repr(thing))
 
 # The `sav_manip.sav_dict` function opens the LBW data structure from IDL and puts
 # the elements in a python dictionary. Most of its elements are reduced to scalars
@@ -77,8 +86,9 @@ def make_hdu_list(sav_file_name, verbose=glVerboseFlag):
     hdr.set('EXTNAME', 'Single Dish', 'APPSS Survey')
     hdr.set('OBSERVAT', 'Arecibo Observatory','Designation of Observatory')
     hdr.set('TELESCOP','Arecibo Radio Telescope','Designation of Telescope')
-    hdr.set('INSTRUME','LBW receiver','Instrument in use')
-    hdr.set('BEAM','3.3x3.8 ', 'Beam size [arcminutes] REVISE FOR LBW?')  #TODO                      
+    hdr.set('INSTRUME','L-Band Wide','Instrument in use')
+    hdr.set('BACKEND', 'WAPPS','Backend (Interim correllator or WAPPS)')
+    hdr.set('BEAM','3.3', 'Beam size [arcminutes]')  
     hdr.set('NANVALUE',-999.000,'Value of missing/null data')                     
     hdr.set('OBJECT' , 'UNASSIGNED  ', 'Name of observed object')  #TODO NEEDS IMPORT if found               
     hdr.set( 'NAME'    , ' ' ,'Common name' )   #TODO NEEDS IMPORT if found 
@@ -89,23 +99,26 @@ def make_hdu_list(sav_file_name, verbose=glVerboseFlag):
     hdr.set('ORIGIN', 'SavFITSconvert.py conversion D Craig', 'File creation location') 
     hdr.set('RA', appssd['RA'],'Right ascension in degrees')
     hdr.set('DEC', appssd['DEC'], 'Declination in degrees')
-    hdr.set('EPOCH',2000.0,'Epoch for coordinates (years)')
-    hdr.set('CHAN', appssd['NCHAN'], 'Number of spectral channels')
+    hdr.set('EQUINOX',2000.0,'Epoch for coordinates (years)')  # need RESTFRQ about here. It is not in .sav lbwsrc (?)
     hdr.set('BW', appssd['BANDWIDTH'],'Bandwidth [MHz]')
-    hdr.set('WINDOW', appssd['WINDOW'].decode('ascii'), 'h for Hamming(?)')
-    hdr.set('FITTYPE', appssd['FITTYPE'].decode('ascii'), 'P for polynomial')
-    hdr.set('RMS', appssd['RMS'], 'RMS of spectrum (noise)')
-    hdr.set('W50', appssd['W50'], 'estimated velocity width at 50%')
-    hdr.set('W50ERR', appssd['W50ERR'], 'error in W50')
-    hdr.set('W20', appssd['W20'], 'estimated velocity width at 20%')
-    hdr.set('W20ERR', appssd['W20ERR'], 'error in W20')
-    hdr.set('VSYS', appssd['VSYS'], 'systemic velocity [km/s]')
-    hdr.set('VSYSERR',appssd['VSYSERR'], 'error in Vsys [km/s]')
-    hdr.set('FLUX', appssd['FLUX'], 'integrated flux [Jy km/s]')
-    hdr.set('FLUXERR', appssd['FLUXERR'], 'error in integrated flux')
-    hdr.set('SN',appssd['SN'],'estimated signal-to-noise ratio')
+    hdr.set('CHAN', appssd['NCHAN'], 'Number of spectral channels')
+    hdr.set('V21SYS', appssd['VSYS'], 'systemic velocity [km/s]')
+    hdr.set('COMMENT','Undergraduate ALFALFA Team (UAT)')
+    hdr.set('COMMENT','Last updated: ' + t_str + ' (SavFITSconvert)') # insert a timestamp here too for consistency
+   # all the tags commented below here do not appear in the minimally processed APPSS archive files 
+#     hdr.set('WINDOW', appssd['WINDOW'].decode('ascii'), 'h for Hamming(?)')
+#     hdr.set('FITTYPE', appssd['FITTYPE'].decode('ascii'), 'P for polynomial')
+#     hdr.set('RMS', appssd['RMS'], 'RMS of spectrum (noise)')
+#     hdr.set('W50', appssd['W50'], 'estimated velocity width at 50%')
+#     hdr.set('W50ERR', appssd['W50ERR'], 'error in W50')
+#     hdr.set('W20', appssd['W20'], 'estimated velocity width at 20%')
+#     hdr.set('W20ERR', appssd['W20ERR'], 'error in W20')
+#     hdr.set('VSYSERR',appssd['VSYSERR'], 'error in Vsys [km/s]')
+#     hdr.set('FLUX', appssd['FLUX'], 'integrated flux [Jy km/s]')
+#     hdr.set('FLUXERR', appssd['FLUXERR'], 'error in integrated flux')
+#     hdr.set('SN',appssd['SN'],'estimated signal-to-noise ratio')
 
-    # now include all comments from the sav structure that are in the dict
+    # now include all observer(?) comments from the sav structure that are in the dict
     # this will insert a new comment for each of those lines.
     for line in range(appssd['COMMENTS'].COUNT[0]):
          hdr.set('COMMENT',appssd['COMMENTS'].TEXT[0][line].decode('ascii'))
