@@ -14,7 +14,16 @@ import datetime
 
 glVerboseFlag = False # global verbosity flag for script
 
-
+def examine_fits(fitsfile):
+    """Show the headers with tags in fitsfile.
+    
+    Will print formatted repr() of ALL headers in the FITS file."""
+    with fits.open(fitsfile) as hdul:
+        for i,itm in enumerate(hdul):
+            print(">>>>>>>>>>>>>>>>>>>>> HEADER: {:2d} >>>>>>>>>>>>>>>>>>>>>>>>>>>".format(i))
+            print(repr(itm.header))
+            print("<<<<<<<<<<<<<<<<<<<<<    END: {:2d} <<<<<<<<<<<<<<<<<<<<<<<<<<<".format(i))
+    
 def sav_dict(sav_file):
     """Converts IDL sav file from lbwsrc etc. to return python dict"""
     from scipy.io import readsav
