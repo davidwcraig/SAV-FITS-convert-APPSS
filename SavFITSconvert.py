@@ -146,6 +146,9 @@ if __name__ == "__main__":
                         help="Specify backend: wapps or interim.")
     parser.add_argument("-m", "--matchfile", type=str, 
                         help="Match file for LBWsrc and AGCnr <--should have these headings, readable by astropy.table.Table.")
+    parser.add_argument("-o", "--overwrite", help="Overwrite files",
+                    action="store_true")
+    
     args = parser.parse_args()
     if args.backend == "wapps":
         backend = "WAPPS"
@@ -174,4 +177,4 @@ if __name__ == "__main__":
         print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
         
     print("Writing FITS file: ", outfile)
-    hdul.writeto(outfile, overwrite = True)
+    hdul.writeto(outfile, overwrite = args.overwrite)
