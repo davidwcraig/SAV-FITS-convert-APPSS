@@ -158,7 +158,12 @@ if __name__ == "__main__":
 #     outfile = nameparts[0]+'.fits'
     
     agcnr, hdul = make_hdu_list(infile, verbose=args.verbose, backend=backend, matchfile=args.matchfile)
-    outfile = "A{:06d}_converted.fits".format(agcnr)
+    # Construct filename:
+    if agcnr != -999: 
+        outfile = "A{:06d}_conv.fits".format(agcnr)
+    else:
+        outfile = srcnm+"_conv_no_agc.fits"
+
     if args.verbose:
         print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
         print("OUTPUT:------------MAIN FITS HEADER----------------------")
