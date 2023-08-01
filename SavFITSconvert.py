@@ -54,7 +54,9 @@ def examine_sav(sav_file):
 # `lbwsrc` variable in the idl structure.
 # initial filenam for testing: 'S000018.4+273720.sav'
 def make_hdu_list(sav_file_name, verbose=glVerboseFlag, matchfile=None, backend='UNSPECIFIED'): 
-    """make a fits HDU list structure for sav_file_name"""
+    """make a fits HDU list structure for sav_file_name
+
+    Returns file name, hdu_list"""
     # get some APPSS data:
     appssd = sav_dict(sav_file_name)
      #diagnostic:
@@ -66,17 +68,25 @@ def make_hdu_list(sav_file_name, verbose=glVerboseFlag, matchfile=None, backend=
         print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
     #get the name, if matchfile exists, try to get AGC
     srcnm = appssd['LBWSRCNAME'].decode('ascii')
+    agc_num = -999 # set as precaution
     if matchfile:
         t = Table.read(matchfile)
         td = dict()
         for i in t.as_array():
             td.update([i])
         try:
-            agc_num = td[srcnm]
+            agc_num = td[srcnm] # in matchfile, srcnm is key, value is agc_num
             print('AGC for ' , srcnm, ' found in ', matchfile, 'as: ', agc_num)
         except KeyError:
-            print('ERROR: AGC not found for: ',srcnm, '>>> using -999')
-            agc_num = -999
+            print('WARNING: AGC not found for: ',srcnm, '>>> using -999')
+            # agc_num = -999
+
+    # assemble filename, including error case. Return filename at end of fn.
+    # Construct filename: (whether matchfile or not.)
+    if agc_num != -999: 
+        outfile = "A{:06d}_conv.fits".format(agc_num)
+    else:
+        outfile = srcnm+"_conv_no_agc.fits"
 
     ## Assemble parts of FITS file
     # Make the astropy data structure for a new fits file.
@@ -131,23 +141,34 @@ def make_hdu_list(sav_file_name, verbose=glVerboseFlag, matchfile=None, backend=
     #make the overall .FITS structure and RETURN IT:
     if backend == 'UNSPECIFIED': 
         print('Warning: backend UNSPECIFIED') 
-    return agc_num, fits.HDUList([primary_hdu, hdu])
+    # outfile is file name to be used in script run from CLI:
+    return outfile, fits.HDUList([primary_hdu, hdu])
     # END OF make_hdu_list
 
 #script execution
 if __name__ == "__main__":
     backend='UNSPECIFIED' # in case none is chosen.
     parser = argparse.ArgumentParser()
-    parser.add_argument("-v", "--verbose", help="Show .SAV input struct, FITS output headers.",
-                    action="store_true")
-    parser.add_argument("input_file", type=str,
-                    help=".SAV file to be converted to FITS")
-    parser.add_argument("-b", "--backend", type=str, choices = ["wapps", "interim"], 
-                        help="Specify backend: wapps or interim.")
-    parser.add_argument("-m", "--matchfile", type=str, 
-                        help="Match file for LBWsrc and AGCnr <--should have these headings, readable by astropy.table.Table.")
-    parser.add_argument("-o", "--overwrite", help="Overwrite files",
-                    action="store_true")
+    parser.add_argument(
+        "-v", "--verbose", 
+        help="Show .SAV input struct, FITS output headers.",
+        action="store_true"
+        )
+    parser.add_argument(
+        "input_file", type=str,
+        help=".SAV file to be converted to FITS. If no AGC found, output file name is based on source name."
+        )
+    parser.add_argument(
+        "-b", "--backend", type=str, choices = ["wapps", "interim"], 
+        help="Specify backend: wapps or interim.")
+    parser.add_argument(
+        "-m", "--matchfile", type=str, 
+        help="Match file for LBWsrc and AGCnr <--table headings, readable by astropy.table.Table."
+        )
+    parser.add_argument(
+        "-o", "--overwrite", help="Overwrite files",
+        action="store_true"
+        )
     
     args = parser.parse_args()
     if args.backend == "wapps":
@@ -157,15 +178,10 @@ if __name__ == "__main__":
     else:
         pass #should be UNSPECIFIED by default
     infile = args.input_file
-#     nameparts = splitext(infile)
-#     outfile = nameparts[0]+'.fits'
     
-    agcnr, hdul = make_hdu_list(infile, verbose=args.verbose, backend=backend, matchfile=args.matchfile)
-    # Construct filename:
-    if agcnr != -999: 
-        outfile = "A{:06d}_conv.fits".format(agcnr)
-    else:
-        outfile = srcnm+"_conv_no_agc.fits"
+    outfile, hdul = make_hdu_list(
+        infile, verbose=args.verbose, backend=backend, matchfile=args.matchfile
+        )
 
     if args.verbose:
         print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
