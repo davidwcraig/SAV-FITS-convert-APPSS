@@ -6,8 +6,6 @@
 
 import sys, argparse
 from os.path import splitext # for filename extension splitting
-import numpy as np
-import matplotlib.pyplot as plt
 # from sav_manip import sav_dict #small module for .sav files -dwc
 from astropy.io import fits
 import datetime
