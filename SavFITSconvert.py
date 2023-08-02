@@ -50,11 +50,10 @@ def examine_sav(sav_file):
 # or simple arrays keyed by their keywords. A few are more nested structures that
 # need a little more manipulation to be placed in the FITS HDUs.  This unpacks the
 # `lbwsrc` variable in the idl structure.
-# initial filenam for testing: 'S000018.4+273720.sav'
 def make_hdu_list(sav_file_name, verbose=glVerboseFlag, matchfile=None, backend='UNSPECIFIED'): 
     """make a fits HDU list structure for sav_file_name
 
-    Returns file name, hdu_list"""
+    Returns file name for saving, hdu_list"""
     # get some APPSS data:
     appssd = sav_dict(sav_file_name)
      #diagnostic:
@@ -64,7 +63,7 @@ def make_hdu_list(sav_file_name, verbose=glVerboseFlag, matchfile=None, backend=
         for thing in appssd.items():
              print(thing)
         print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
-    #get the name, if matchfile exists, try to get AGC
+    #get the name, if matchfile exists, try to get AGC number to make fits name.
     srcnm = appssd['LBWSRCNAME'].decode('ascii')
     agc_num = -999 # set as precaution
     if matchfile:
@@ -79,7 +78,8 @@ def make_hdu_list(sav_file_name, verbose=glVerboseFlag, matchfile=None, backend=
             print('WARNING: AGC not found for: ',srcnm, '>>> using -999')
             # agc_num = -999
 
-    # assemble filename, including error case. Return filename at end of fn.
+    # assemble filename, including error case. This function will return
+    # filename along with hdu data.
     # Construct filename: (whether matchfile or not.)
     if agc_num != -999: 
         outfile = "A{:06d}_conv.fits".format(agc_num)
@@ -113,7 +113,8 @@ def make_hdu_list(sav_file_name, verbose=glVerboseFlag, matchfile=None, backend=
     hdr.set('BACKEND', backend,'Backend (Interim correllator or WAPPS)')
     hdr.set('BEAM','3.3', 'Beam size [arcminutes]')  
     hdr.set('NANVALUE',-999.000,'Value of missing/null data')                     
-    hdr.set('OBJECT' , 'AGC {:6d}'.format(agc_num), 'Name of observed object')  #TODO not sure all cases caught yet.             
+    hdr.set('OBJECT' , 'AGC {:6d}'.format(agc_num), 'Name of observed object')  
+    #TODO not sure all cases caught yet.             
     hdr.set( 'NAME'    , ' ' ,'Common name' )   #TODO NEEDS IMPORT if found 
     #appss idl text data is still in bytes, does it work? 
     #NOPE! So it must be decoded. .FITS standard accepts ASCII only:                      
@@ -122,12 +123,14 @@ def make_hdu_list(sav_file_name, verbose=glVerboseFlag, matchfile=None, backend=
     hdr.set('ORIGIN', 'SavFITSconvert.py conversion D Craig', 'File creation location') 
     hdr.set('RA', appssd['RA'],'Right ascension in degrees')
     hdr.set('DEC', appssd['DEC'], 'Declination in degrees')
-    hdr.set('EQUINOX',2000.0,'Epoch for coordinates (years)')  # need RESTFRQ about here. It is not in .sav lbwsrc (?)
+    hdr.set('EQUINOX',2000.0,'Epoch for coordinates (years)')  
+    #TODO  need RESTFRQ about here. It is not in .sav lbwsrc (?)
     hdr.set('BW', appssd['BANDWIDTH'],'Bandwidth [MHz]')
     hdr.set('CHAN', appssd['NCHAN'], 'Number of spectral channels')
     hdr.set('V21SYS', appssd['VSYS'], 'systemic velocity [km/s]')
     hdr.set('COMMENT','Undergraduate ALFALFA Team (UAT)')
-    hdr.set('COMMENT','Last updated: ' + t_str + ' (SavFITSconvert)') # insert a timestamp here too for consistency
+    # insert a timestamp here too for consistency
+    hdr.set('COMMENT','Last updated: ' + t_str + ' (SavFITSconvert)') 
     # now include all observer(?) comments from the sav structure that are in the dict
     # this will insert a new comment for each of those lines.
     for line in range(appssd['COMMENTS'].COUNT[0]):
