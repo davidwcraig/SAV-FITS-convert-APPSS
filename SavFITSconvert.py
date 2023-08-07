@@ -124,7 +124,7 @@ def make_hdu_list(sav_file_name, verbose=glVerboseFlag, matchfile=None, backend=
     hdr.set('RA', appssd['RA'],'Right ascension in degrees')
     hdr.set('DEC', appssd['DEC'], 'Declination in degrees')
     hdr.set('EQUINOX',2000.0,'Epoch for coordinates (years)')  
-    #TODO  need RESTFRQ about here. It is not in .sav lbwsrc (?)
+    hdr.set('RESTFRQ',1.4204058E+09,'Rest frequency [Hz]') #.sav files lack;
     hdr.set('BW', appssd['BANDWIDTH'],'Bandwidth [MHz]')
     hdr.set('CHAN', appssd['NCHAN'], 'Number of spectral channels')
     hdr.set('V21SYS', appssd['VSYS'], 'systemic velocity [km/s]')
