@@ -78,13 +78,13 @@ def make_hdu_list(sav_file_name, verbose=glVerboseFlag, matchfile=None, backend=
             print('WARNING: AGC not found for: ',srcnm, '>>> using -999')
             # agc_num = -999
 
-    # assemble filename, including error case. This function will return
+    # assemble filename base, including error case. This function will return
     # filename along with hdu data.
     # Construct filename: (whether matchfile or not.)
     if agc_num != -999: 
-        outfile = "A{:06d}_conv.fits".format(agc_num)
+        outfile = "A{:06d}_conv".format(agc_num)
     else:
-        outfile = srcnm+"_conv_no_agc.fits"
+        outfile = srcnm+"_conv_no_agc"
 
     ## Assemble parts of FITS file
     # Make the astropy data structure for a new fits file.
@@ -167,6 +167,11 @@ if __name__ == "__main__":
         help="Match file for LBWsrc and AGCnr <--table headings, readable by astropy.table.Table."
         )
     parser.add_argument(
+        "-e", "--ecsv",  
+        help="Emit .ecsv (human-readable) file of table as well as .fits",
+        action="store_true"
+        )
+    parser.add_argument(
         "-o", "--overwrite", help="Overwrite files",
         action="store_true"
         )
@@ -193,5 +198,14 @@ if __name__ == "__main__":
         print("---------------------------------------------------------")
         print("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
         
-    print("Writing FITS file: ", outfile)
-    hdul.writeto(outfile, overwrite = args.overwrite)
+     
+    print("Writing FITS file: ", outfile+'.fits')
+    hdul.writeto(outfile+'.fits', overwrite = args.overwrite)
+    if args.ecsv:
+        # make a table object from the hdu
+        w = Table.read(hdul) # read the structure for Table
+        w.write(
+            outfile+'.ecsv', 
+            format='ascii.ecsv', delimiter=',',
+            overwrite=args.overwrite)
+
